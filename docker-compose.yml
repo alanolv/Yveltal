@@ -1,0 +1,37 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: deposito_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: deposito_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d deposito_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Servicio de la API (opcional para ejecutar todo con Docker en local)
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: deposito_back_api
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/deposito_db?schema=public"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
